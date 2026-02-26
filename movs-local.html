@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Movs Local</title>
+  <style>
+    :root {
+      --bg: #060913;
+      --panel: rgba(16, 22, 40, 0.72);
+      --text: #e9f7ff;
+      --muted: #94a3b8;
+      --cyan: #22d3ee;
+      --purple: #a855f7;
+      --border: rgba(148, 163, 184, 0.2);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 10%, rgba(34, 211, 238, 0.15), transparent 30%),
+        radial-gradient(circle at 80% 20%, rgba(168, 85, 247, 0.18), transparent 35%),
+        radial-gradient(circle at 50% 90%, rgba(34, 211, 238, 0.08), transparent 40%),
+        var(--bg);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .stars, .stars::before, .stars::after {
+      position: fixed;
+      inset: 0;
+      content: "";
+      background-image: radial-gradient(2px 2px at 20px 30px, #fff, transparent),
+                        radial-gradient(1px 1px at 40px 70px, #dbeafe, transparent),
+                        radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+                        radial-gradient(2px 2px at 130px 80px, #e0f2fe, transparent);
+      background-size: 160px 120px;
+      opacity: .35;
+      pointer-events: none;
+      z-index: 0;
+      animation: twinkle 8s linear infinite;
+    }
+    .stars::before { animation-duration: 12s; opacity: .22; transform: scale(1.2); }
+    .stars::after { animation-duration: 16s; opacity: .18; transform: scale(1.4); }
+    @keyframes twinkle { from { transform: translateY(0); } to { transform: translateY(-60px); } }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(6, 9, 19, 0.88);
+      backdrop-filter: blur(10px);
+    }
+    .logo {
+      font-weight: 900;
+      letter-spacing: 1px;
+      font-size: 1.3rem;
+      color: var(--cyan);
+      text-shadow: 0 0 18px rgba(34, 211, 238, 0.65);
+      margin-right: 8px;
+      white-space: nowrap;
+    }
+    .search {
+      background: rgba(15, 23, 42, .85);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 10px;
+      min-width: 180px;
+      flex: 1;
+      max-width: 340px;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      flex: 2;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, .6);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 7px 11px;
+      cursor: pointer;
+      font-size: .8rem;
+      white-space: nowrap;
+    }
+    .tab.active {
+      border-color: rgba(34, 211, 238, .7);
+      box-shadow: 0 0 18px rgba(34, 211, 238, .3);
+      color: var(--cyan);
+    }
+
+    .hero {
+      position: relative;
+      z-index: 1;
+      margin: 18px auto;
+      width: min(1200px, 96%);
+      min-height: 250px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      background: linear-gradient(120deg, rgba(34,211,238,.22), rgba(168,85,247,.25)),
+                  url('https://image.tmdb.org/t/p/original/8I37NtDffNV7AZlDa7uDvvqhovU.jpg') center/cover;
+      box-shadow: 0 20px 55px rgba(0,0,0,.4);
+      display: flex;
+      align-items: end;
+    }
+    .hero-inner {
+      width: 100%;
+      padding: 22px;
+      background: linear-gradient(to top, rgba(6,9,19,.9), rgba(6,9,19,.2));
+    }
+    .hero h1 { margin: 0 0 8px; font-size: clamp(1.4rem, 4vw, 2.4rem); }
+    .hero p { margin: 0; color: var(--muted); }
+
+    main { position: relative; z-index: 1; }
+    .row { margin: 22px auto; width: min(1260px, 96%); }
+    .row h2 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+      color: var(--purple);
+      text-shadow: 0 0 14px rgba(168, 85, 247, .45);
+    }
+    .cards {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(130px, 160px);
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: thin;
+    }
+    .card {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px) scale(1.02);
+      border-color: rgba(34,211,238,.7);
+      box-shadow: 0 0 20px rgba(34,211,238,.35);
+    }
+    .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
+    .meta { padding: 8px; }
+    .title { font-size: .83rem; line-height: 1.2; }
+    .year { font-size: .72rem; color: var(--muted); margin-top: 4px; }
+
+    .modal {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(6,9,19,.92);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal.open { display: flex; }
+    .player {
+      width: min(100%, 980px);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #000;
+      box-shadow: 0 0 30px rgba(34,211,238,.25);
+    }
+    .player-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: rgba(15,23,42,.9);
+      border-bottom: 1px solid var(--border);
+      font-size: .9rem;
+    }
+    .close {
+      border: 1px solid var(--border);
+      background: rgba(15,23,42,.8);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 6px 9px;
+      cursor: pointer;
+    }
+    iframe { width: 100%; aspect-ratio: 16/9; border: 0; display: block; }
+
+    @media (max-width: 760px) {
+      .nav { flex-wrap: wrap; }
+      .search { max-width: 100%; flex: 1 1 100%; order: 3; }
+      .tabs { flex: 1 1 100%; order: 4; }
+      .cards { grid-auto-columns: minmax(120px, 140px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+
+  <nav class="nav">
+    <div class="logo">MOVS</div>
+    <input class="search" id="search" placeholder="Search movies..." />
+    <div class="tabs" id="tabs"></div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <h1>Movs Local — Sci‑Fi Streaming Library</h1>
+      <p>Open this file directly on Chromebook. Click any movie to launch the embedded player.</p>
+    </div>
+  </section>
+
+  <main id="app"></main>
+
+  <div class="modal" id="modal">
+    <div class="player">
+      <div class="player-head">
+        <span id="playerTitle">Now Playing</span>
+        <button class="close" id="closeBtn">Close</button>
+      </div>
+      <iframe id="playerFrame" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+    </div>
+  </div>
+
+  <script>
+    const categories = ["Trending", "Sci-Fi", "Action", "Adventure", "Horror", "Comedy", "Classics"];
+
+    const movies = [
+      { id: "157336", title: "Interstellar", year: 2014, category: ["Sci-Fi", "Trending"], poster: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg" },
+      { id: "27205", title: "Inception", year: 2010, category: ["Sci-Fi", "Action", "Trending"], poster: "https://image.tmdb.org/t/p/w500/ljsZTbVsrQSqZgWeep2B1QiDKuh.jpg" },
+      { id: "603", title: "The Matrix", year: 1999, category: ["Sci-Fi", "Action", "Classics"], poster: "https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg" },
+      { id: "78", title: "Blade Runner", year: 1982, category: ["Sci-Fi", "Classics"], poster: "https://image.tmdb.org/t/p/w500/63N9uy8nd9j7Eog2axPQ8lbr3Wj.jpg" },
+      { id: "348", title: "Alien", year: 1979, category: ["Sci-Fi", "Horror", "Classics"], poster: "https://image.tmdb.org/t/p/w500/vfrQk5IPloGg1v9Rzbh2Eg3VGyM.jpg" },
+      { id: "335984", title: "Blade Runner 2049", year: 2017, category: ["Sci-Fi", "Trending"], poster: "https://image.tmdb.org/t/p/w500/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg" },
+      { id: "693134", title: "Dune: Part Two", year: 2024, category: ["Sci-Fi", "Adventure", "Trending"], poster: "https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nez7S.jpg" },
+      { id: "438631", title: "Dune", year: 2021, category: ["Sci-Fi", "Adventure", "Trending"], poster: "https://image.tmdb.org/t/p/w500/d5NXSklXo0qyIYkgV94XAgMIckC.jpg" },
+      { id: "11", title: "Star Wars", year: 1977, category: ["Sci-Fi", "Adventure", "Classics"], poster: "https://image.tmdb.org/t/p/w500/6FfCtAuVAW8XJjZ7eWeLibRLWTw.jpg" },
+      { id: "155", title: "The Dark Knight", year: 2008, category: ["Action", "Trending"], poster: "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911kpUpYQO3QBRr.jpg" },
+      { id: "603692", title: "John Wick: Chapter 4", year: 2023, category: ["Action", "Trending"], poster: "https://image.tmdb.org/t/p/w500/vZloFAK7NmvMGKE7buMlR6Ksrl8.jpg" },
+      { id: "76341", title: "Mad Max: Fury Road", year: 2015, category: ["Action", "Sci-Fi"], poster: "https://image.tmdb.org/t/p/w500/8tZYtuWezp8JbcsvHYO0O46tFbo.jpg" },
+      { id: "346364", title: "It", year: 2017, category: ["Horror"], poster: "https://image.tmdb.org/t/p/w500/9E2y5Q7WlCVNEhP5GiVTjhEhx1o.jpg" },
+      { id: "694", title: "The Shining", year: 1980, category: ["Horror", "Classics"], poster: "https://image.tmdb.org/t/p/w500/nRj5511mZdTl4saWEPoj9QroTIu.jpg" },
+      { id: "539", title: "Psycho", year: 1960, category: ["Horror", "Classics"], poster: "https://image.tmdb.org/t/p/w500/yz4QVqPx3h1hD1DfqqQkCq3rmxW.jpg" },
+      { id: "120", title: "The Fellowship of the Ring", year: 2001, category: ["Adventure", "Classics"], poster: "https://image.tmdb.org/t/p/w500/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg" },
+      { id: "121", title: "The Two Towers", year: 2002, category: ["Adventure", "Classics"], poster: "https://image.tmdb.org/t/p/w500/5VTN0pR8gcqV3EPUHHfMGnJYN9L.jpg" },
+      { id: "122", title: "The Return of the King", year: 2003, category: ["Adventure", "Classics"], poster: "https://image.tmdb.org/t/p/w500/rCzpDGLbOoPwLjy3OAm5NUPOTrC.jpg" },
+
+      { id: "137", title: "Groundhog Day", year: 1993, category: ["Comedy", "Classics"], poster: "https://image.tmdb.org/t/p/w500/gCgt1WARPmBEUMKEDMEkEOGkHFk.jpg" },
+      { id: "115", title: "The Big Lebowski", year: 1998, category: ["Comedy", "Classics"], poster: "https://image.tmdb.org/t/p/w500/fRtJrPJxsHsFMlBDsLmDkhsPJBR.jpg" },
+      { id: "507", title: "The Truman Show", year: 1998, category: ["Comedy", "Classics"], poster: "https://image.tmdb.org/t/p/w500/vuza0WtDSYR4Q4kyclBMigSiv9o.jpg" },
+      { id: "87", title: "Monty Python and the Holy Grail", year: 1975, category: ["Comedy", "Classics"], poster: "https://image.tmdb.org/t/p/w500/GyB2FASIkOSGMTcZ4wz0a9MNJoK.jpg" },
+      { id: "935", title: "Dr. Strangelove", year: 1964, category: ["Comedy", "Classics"], poster: "https://image.tmdb.org/t/p/w500/1MBnlDGvgXMihMRyBPOIqmnqUM0.jpg" },
+      { id: "2109", title: "Ferris Bueller's Day Off", year: 1986, category: ["Comedy", "Classics"], poster: "https://image.tmdb.org/t/p/w500/9LTQNCvoLsKXb5rORkXNSsLvfFI.jpg" },
+      { id: "1621", title: "Home Alone", year: 1990, category: ["Comedy", "Classics"], poster: "https://image.tmdb.org/t/p/w500/onTSipZ8R3bliBdKfPtsDuHTdlL.jpg" },
+      { id: "8467", title: "Dumb and Dumber", year: 1994, category: ["Comedy", "Classics"], poster: "https://image.tmdb.org/t/p/w500/4LdpBXiCyGKkR8FGHgjKlphrfUc.jpg" },
+      { id: "11862", title: "Ace Ventura: Pet Detective", year: 1994, category: ["Comedy", "Classics"], poster: "https://image.tmdb.org/t/p/w500/pOGxAE2VCIylwGkTLkmxyNE8LNs.jpg" },
+      { id: "18785", title: "The Hangover", year: 2009, category: ["Comedy"], poster: "https://image.tmdb.org/t/p/w500/uluhlXubGu1VxICNDc1oHMNPVwr.jpg" },
+      { id: "22538", title: "Scott Pilgrim vs. the World", year: 2010, category: ["Comedy", "Action"], poster: "https://image.tmdb.org/t/p/w500/g5IoYeudx9XBEfwNL0fHvSckLBz.jpg" },
+      { id: "950526", title: "Barbie", year: 2023, category: ["Comedy", "Trending"], poster: "https://image.tmdb.org/t/p/w500/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg" },
+      { id: "545611", title: "Everything Everywhere All at Once", year: 2022, category: ["Comedy", "Action", "Trending"], poster: "https://image.tmdb.org/t/p/w500/w3LxiVYdWWRvEVdn5RYq6jIqkb1.jpg" },
+      { id: "787699", title: "Wonka", year: 2023, category: ["Comedy", "Adventure", "Trending"], poster: "https://image.tmdb.org/t/p/w500/qhb1qOilapbapxWQn9jtRCMwXJF.jpg" },
+      { id: "804150", title: "Migration", year: 2023, category: ["Comedy", "Adventure", "Trending"], poster: "https://image.tmdb.org/t/p/w500/ldfCF9RhR40l5TPLrwCQkeXvBNg.jpg" },
+      { id: "550988", title: "Free Guy", year: 2021, category: ["Comedy", "Action"], poster: "https://image.tmdb.org/t/p/w500/xmbU4JTUm8rsdtn7Y3Fcm30GpeT.jpg" },
+      { id: "1011985", title: "Kung Fu Panda 4", year: 2024, category: ["Comedy", "Adventure", "Trending"], poster: "https://image.tmdb.org/t/p/w500/kDp1vUBnMpe8ak4rjgl3cLELqjU.jpg" },
+      { id: "515195", title: "Jojo Rabbit", year: 2019, category: ["Comedy"], poster: "https://image.tmdb.org/t/p/w500/7GsM4mtM0worKAgkJlVeWzKCab0.jpg" },
+      { id: "284053", title: "Thor: Ragnarok", year: 2017, category: ["Comedy", "Action", "Adventure"], poster: "https://image.tmdb.org/t/p/w500/rzRwTcFvttcN1ZpX2xv4j3tSdJu.jpg" },
+      { id: "315162", title: "Puss in Boots: The Last Wish", year: 2022, category: ["Comedy", "Adventure", "Trending"], poster: "https://image.tmdb.org/t/p/w500/kuf6dutpsT0vSVehic3EZIqkOBt.jpg" }
+    ];
+
+    const app = document.getElementById('app');
+    const tabs = document.getElementById('tabs');
+    const search = document.getElementById('search');
+    const modal = document.getElementById('modal');
+    const closeBtn = document.getElementById('closeBtn');
+    const frame = document.getElementById('playerFrame');
+    const playerTitle = document.getElementById('playerTitle');
+
+    let activeCategory = null;
+    let query = '';
+
+    function renderTabs() {
+      tabs.innerHTML = '';
+      const all = document.createElement('button');
+      all.className = 'tab ' + (activeCategory === null ? 'active' : '');
+      all.textContent = 'All';
+      all.onclick = () => { activeCategory = null; renderTabs(); renderRows(); };
+      tabs.appendChild(all);
+
+      categories.forEach(c => {
+        const b = document.createElement('button');
+        b.className = 'tab ' + (activeCategory === c ? 'active' : '');
+        b.textContent = c;
+        b.onclick = () => { activeCategory = c; renderTabs(); renderRows(); };
+        tabs.appendChild(b);
+      });
+    }
+
+    function openMovie(movie) {
+      playerTitle.textContent = `${movie.title} (${movie.year})`;
+      frame.src = `https://vidsrc.xyz/embed/movie/${movie.id}`;
+      modal.classList.add('open');
+    }
+
+    function card(movie) {
+      return `
+        <article class="card" data-id="${movie.id}" aria-label="${movie.title}">
+          <img src="${movie.poster}" alt="${movie.title} poster" loading="lazy" />
+          <div class="meta">
+            <div class="title">${movie.title}</div>
+            <div class="year">${movie.year}</div>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderRows() {
+      app.innerHTML = '';
+      const filtered = movies.filter(m => {
+        const byCategory = activeCategory ? m.category.includes(activeCategory) : true;
+        const bySearch = query ? m.title.toLowerCase().includes(query) : true;
+        return byCategory && bySearch;
+      });
+
+      if (query || activeCategory) {
+        const row = document.createElement('section');
+        row.className = 'row';
+        row.innerHTML = `<h2>${query ? `Search: "${query}"` : activeCategory}</h2><div class="cards">${filtered.map(card).join('')}</div>`;
+        app.appendChild(row);
+      } else {
+        categories.forEach(c => {
+          const list = movies.filter(m => m.category.includes(c));
+          if (!list.length) return;
+          const row = document.createElement('section');
+          row.className = 'row';
+          row.innerHTML = `<h2>${c}</h2><div class="cards">${list.map(card).join('')}</div>`;
+          app.appendChild(row);
+        });
+      }
+
+      app.querySelectorAll('.card').forEach(el => {
+        el.addEventListener('click', () => {
+          const movie = movies.find(m => m.id === el.dataset.id);
+          if (movie) openMovie(movie);
+        });
+      });
+    }
+
+    search.addEventListener('input', (e) => {
+      query = e.target.value.trim().toLowerCase();
+      renderRows();
+    });
+
+    closeBtn.onclick = () => {
+      modal.classList.remove('open');
+      frame.src = '';
+    };
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('open');
+        frame.src = '';
+      }
+    });
+
+    renderTabs();
+    renderRows();
+  </script>
+</body>
+</html>
