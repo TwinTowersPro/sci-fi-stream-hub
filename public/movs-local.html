@@ -196,6 +196,61 @@
     }
     iframe { width: 100%; aspect-ratio: 16/9; border: 0; display: block; }
 
+    .ep-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 12px;
+      background: rgba(15,23,42,.95);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .ep-controls label { font-size: .8rem; color: var(--muted); }
+    .ep-controls select {
+      background: rgba(6,9,19,.9);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 8px;
+      border-radius: 8px;
+      font-size: .8rem;
+    }
+    .ep-grid {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      max-height: 120px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .ep-btn {
+      background: rgba(15,23,42,.8);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: .75rem;
+      transition: all .15s;
+    }
+    .ep-btn:hover, .ep-btn.active {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      box-shadow: 0 0 10px rgba(34,211,238,.25);
+    }
+    .series-badge {
+      background: var(--purple);
+      color: #fff;
+      font-size: .6rem;
+      padding: 2px 5px;
+      border-radius: 4px;
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .card { position: relative; }
+
     @media (max-width: 760px) {
       .nav { flex-wrap: wrap; }
       .search { max-width: 100%; flex: 1 1 100%; order: 3; }
@@ -228,12 +283,18 @@
         <span id="playerTitle">Now Playing</span>
         <button class="close" id="closeBtn">Close</button>
       </div>
+      <div class="ep-controls" id="epControls" style="display:none;">
+        <label>Season:</label>
+        <select id="seasonSelect"></select>
+        <label>Episode:</label>
+        <div class="ep-grid" id="epGrid"></div>
+      </div>
       <iframe id="playerFrame" allowfullscreen allow="autoplay; encrypted-media"></iframe>
     </div>
   </div>
 
   <script>
-    const categories = ["Trending", "Marvel", "DC", "Star Wars", "Spider-Man", "Sci-Fi", "Action", "Adventure", "Horror", "Comedy", "Classics"];
+    const categories = ["Trending", "Anime", "Marvel", "DC", "Star Wars", "Spider-Man", "Sci-Fi", "Action", "Adventure", "Horror", "Comedy", "Classics"];
 
     const movies = [
       // === MARVEL (MCU + extras) ===
@@ -622,6 +683,11 @@
       { id: "244786", title: "Whiplash", year: 2014, category: ["Trending"], poster: "https://image.tmdb.org/t/p/w500/7fn624j5lj3xTme2SgiLCeuedmO.jpg" },
       { id: "109830", title: "The Wolf of Wall Street", year: 2013, category: ["Comedy", "Trending"], poster: "https://image.tmdb.org/t/p/w500/34m2tygAYBGqA9MXKhRDtzYd4MR.jpg" },
       { id: "804150", title: "Migration", year: 2023, category: ["Comedy", "Adventure", "Trending"], poster: "https://image.tmdb.org/t/p/w500/ldfCF9RhR40l5TPLrwCQkeXvBNg.jpg" },
+      // === ANIME / SERIES ===
+      { id: "95479", title: "Jujutsu Kaisen", year: 2020, category: ["Anime", "Action", "Trending"], poster: "https://image.tmdb.org/t/p/w500/hFWP5HkbVEe40hrXgtCeQxoccHE.jpg", type: "tv", seasons: [
+        { season: 1, episodes: 24 },
+        { season: 2, episodes: 23 }
+      ]},
     ];
 
     const app = document.getElementById('app');
@@ -631,9 +697,15 @@
     const closeBtn = document.getElementById('closeBtn');
     const frame = document.getElementById('playerFrame');
     const playerTitle = document.getElementById('playerTitle');
+    const epControls = document.getElementById('epControls');
+    const seasonSelect = document.getElementById('seasonSelect');
+    const epGrid = document.getElementById('epGrid');
 
     let activeCategory = null;
     let query = '';
+    let currentSeries = null;
+    let currentSeason = 1;
+    let currentEpisode = 1;
 
     function renderTabs() {
       tabs.innerHTML = '';
@@ -653,14 +725,69 @@
     }
 
     function openMovie(movie) {
-      playerTitle.textContent = `${movie.title} (${movie.year})`;
-      frame.src = `https://vidsrc.xyz/embed/movie/${movie.id}`;
+      if (movie.type === 'tv') {
+        currentSeries = movie;
+        currentSeason = 1;
+        currentEpisode = 1;
+        playerTitle.textContent = `${movie.title}`;
+        epControls.style.display = 'flex';
+        renderSeasonSelect();
+        renderEpisodes();
+        loadSeriesEpisode();
+      } else {
+        currentSeries = null;
+        epControls.style.display = 'none';
+        playerTitle.textContent = `${movie.title} (${movie.year})`;
+        frame.src = `https://vidsrc.xyz/embed/movie/${movie.id}`;
+      }
       modal.classList.add('open');
     }
 
+    function renderSeasonSelect() {
+      seasonSelect.innerHTML = '';
+      currentSeries.seasons.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.season;
+        opt.textContent = `Season ${s.season}`;
+        if (s.season === currentSeason) opt.selected = true;
+        seasonSelect.appendChild(opt);
+      });
+    }
+
+    function renderEpisodes() {
+      epGrid.innerHTML = '';
+      const seasonData = currentSeries.seasons.find(s => s.season === currentSeason);
+      if (!seasonData) return;
+      for (let i = 1; i <= seasonData.episodes; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'ep-btn' + (i === currentEpisode ? ' active' : '');
+        btn.textContent = `E${i}`;
+        btn.onclick = () => {
+          currentEpisode = i;
+          renderEpisodes();
+          loadSeriesEpisode();
+        };
+        epGrid.appendChild(btn);
+      }
+    }
+
+    function loadSeriesEpisode() {
+      playerTitle.textContent = `${currentSeries.title} — S${currentSeason}E${currentEpisode}`;
+      frame.src = `https://vidsrc.xyz/embed/tv/${currentSeries.id}/${currentSeason}/${currentEpisode}`;
+    }
+
+    seasonSelect.addEventListener('change', () => {
+      currentSeason = parseInt(seasonSelect.value);
+      currentEpisode = 1;
+      renderEpisodes();
+      loadSeriesEpisode();
+    });
+
     function card(movie) {
+      const badge = movie.type === 'tv' ? `<span class="series-badge">Series</span>` : '';
       return `
         <article class="card" data-id="${movie.id}" aria-label="${movie.title}">
+          ${badge}
           <img src="${movie.poster}" alt="${movie.title} poster" loading="lazy" />
           <div class="meta">
             <div class="title">${movie.title}</div>
@@ -710,12 +837,14 @@
     closeBtn.onclick = () => {
       modal.classList.remove('open');
       frame.src = '';
+      epControls.style.display = 'none';
     };
 
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
         modal.classList.remove('open');
         frame.src = '';
+        epControls.style.display = 'none';
       }
     });
 
