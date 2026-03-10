@@ -683,6 +683,11 @@
       { id: "244786", title: "Whiplash", year: 2014, category: ["Trending"], poster: "https://image.tmdb.org/t/p/w500/7fn624j5lj3xTme2SgiLCeuedmO.jpg" },
       { id: "109830", title: "The Wolf of Wall Street", year: 2013, category: ["Comedy", "Trending"], poster: "https://image.tmdb.org/t/p/w500/34m2tygAYBGqA9MXKhRDtzYd4MR.jpg" },
       { id: "804150", title: "Migration", year: 2023, category: ["Comedy", "Adventure", "Trending"], poster: "https://image.tmdb.org/t/p/w500/ldfCF9RhR40l5TPLrwCQkeXvBNg.jpg" },
+      // === ANIME / SERIES ===
+      { id: "95479", title: "Jujutsu Kaisen", year: 2020, category: ["Anime", "Action", "Trending"], poster: "https://image.tmdb.org/t/p/w500/hFWP5HkbVEe40hrXgtCeQxoccHE.jpg", type: "tv", seasons: [
+        { season: 1, episodes: 24 },
+        { season: 2, episodes: 23 }
+      ]},
     ];
 
     const app = document.getElementById('app');
@@ -692,9 +697,15 @@
     const closeBtn = document.getElementById('closeBtn');
     const frame = document.getElementById('playerFrame');
     const playerTitle = document.getElementById('playerTitle');
+    const epControls = document.getElementById('epControls');
+    const seasonSelect = document.getElementById('seasonSelect');
+    const epGrid = document.getElementById('epGrid');
 
     let activeCategory = null;
     let query = '';
+    let currentSeries = null;
+    let currentSeason = 1;
+    let currentEpisode = 1;
 
     function renderTabs() {
       tabs.innerHTML = '';
@@ -714,14 +725,69 @@
     }
 
     function openMovie(movie) {
-      playerTitle.textContent = `${movie.title} (${movie.year})`;
-      frame.src = `https://vidsrc.xyz/embed/movie/${movie.id}`;
+      if (movie.type === 'tv') {
+        currentSeries = movie;
+        currentSeason = 1;
+        currentEpisode = 1;
+        playerTitle.textContent = `${movie.title}`;
+        epControls.style.display = 'flex';
+        renderSeasonSelect();
+        renderEpisodes();
+        loadSeriesEpisode();
+      } else {
+        currentSeries = null;
+        epControls.style.display = 'none';
+        playerTitle.textContent = `${movie.title} (${movie.year})`;
+        frame.src = `https://vidsrc.xyz/embed/movie/${movie.id}`;
+      }
       modal.classList.add('open');
     }
 
+    function renderSeasonSelect() {
+      seasonSelect.innerHTML = '';
+      currentSeries.seasons.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.season;
+        opt.textContent = `Season ${s.season}`;
+        if (s.season === currentSeason) opt.selected = true;
+        seasonSelect.appendChild(opt);
+      });
+    }
+
+    function renderEpisodes() {
+      epGrid.innerHTML = '';
+      const seasonData = currentSeries.seasons.find(s => s.season === currentSeason);
+      if (!seasonData) return;
+      for (let i = 1; i <= seasonData.episodes; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'ep-btn' + (i === currentEpisode ? ' active' : '');
+        btn.textContent = `E${i}`;
+        btn.onclick = () => {
+          currentEpisode = i;
+          renderEpisodes();
+          loadSeriesEpisode();
+        };
+        epGrid.appendChild(btn);
+      }
+    }
+
+    function loadSeriesEpisode() {
+      playerTitle.textContent = `${currentSeries.title} — S${currentSeason}E${currentEpisode}`;
+      frame.src = `https://vidsrc.xyz/embed/tv/${currentSeries.id}/${currentSeason}/${currentEpisode}`;
+    }
+
+    seasonSelect.addEventListener('change', () => {
+      currentSeason = parseInt(seasonSelect.value);
+      currentEpisode = 1;
+      renderEpisodes();
+      loadSeriesEpisode();
+    });
+
     function card(movie) {
+      const badge = movie.type === 'tv' ? `<span class="series-badge">Series</span>` : '';
       return `
         <article class="card" data-id="${movie.id}" aria-label="${movie.title}">
+          ${badge}
           <img src="${movie.poster}" alt="${movie.title} poster" loading="lazy" />
           <div class="meta">
             <div class="title">${movie.title}</div>
@@ -771,12 +837,14 @@
     closeBtn.onclick = () => {
       modal.classList.remove('open');
       frame.src = '';
+      epControls.style.display = 'none';
     };
 
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
         modal.classList.remove('open');
         frame.src = '';
+        epControls.style.display = 'none';
       }
     });
 
