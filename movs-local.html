@@ -747,7 +747,7 @@
         currentSeries = null;
         epControls.style.display = 'none';
         playerTitle.textContent = `${movie.title} (${movie.year})`;
-        frame.src = `https://vidsrc.xyz/embed/movie/${movie.id}`;
+        frame.src = `https://www.2embed.cc/embed/${movie.id}`;
       }
       modal.classList.add('open');
     }
@@ -782,7 +782,7 @@
 
     function loadSeriesEpisode() {
       playerTitle.textContent = `${currentSeries.title} — S${currentSeason}E${currentEpisode}`;
-      frame.src = `https://vidsrc.xyz/embed/tv/${currentSeries.id}/${currentSeason}/${currentEpisode}`;
+      frame.src = `https://www.2embed.cc/embedtv/${currentSeries.id}&s=${currentSeason}&e=${currentEpisode}`;
     }
 
     seasonSelect.addEventListener('change', () => {
